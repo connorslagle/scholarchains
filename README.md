@@ -36,6 +36,38 @@ See `/NIP.md` for the complete protocol specification including:
 - File storage with Blossom
 - Security considerations and verification processes
 
+## ⚠️ OpenTimestamps Implementation Note
+
+**Current Status**: The OpenTimestamps functionality is currently implemented with mock functions for UI/UX demonstration purposes.
+
+**Why**: The `opentimestamps` npm package is a CommonJS library that's incompatible with Vite's ESM bundler. Multiple workaround attempts (dynamic imports, Vite plugins, etc.) were unsuccessful due to fundamental module system incompatibilities.
+
+**Production Implementation Required**: To use real OpenTimestamps cryptographic timestamping, you need to implement a backend API endpoint:
+
+```typescript
+// Example Node.js backend endpoint
+POST /api/timestamp
+{
+  "data": "string to timestamp",
+  "calendars": ["https://alice.btc.calendar.opentimestamps.org", ...]
+}
+
+// Returns
+{
+  "proof": "base64-encoded OTS proof",
+  "info": { "isPending": true }
+}
+```
+
+The backend can use the `opentimestamps` library in Node.js where CommonJS modules work correctly. The frontend would call this API instead of using the library directly.
+
+**Alternative Solutions**:
+1. Create a Node.js backend service (recommended)
+2. Use WebAssembly-based OTS implementation (if available)
+3. Reimplement OTS protocol in TypeScript (complex)
+
+See `src/lib/opentimestamps.ts` for implementation details and TODOs.
+
 ## 🚀 Quick Start
 
 ### Option 1: Docker (Recommended)

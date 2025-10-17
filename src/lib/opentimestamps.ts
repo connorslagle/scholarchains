@@ -1,11 +1,22 @@
 /**
  * OpenTimestamps Utility Functions
  * Handles creation and verification of cryptographic timestamps
+ *
+ * NOTE: The opentimestamps npm package is a CommonJS library that's incompatible with
+ * Vite's ESM bundler. For production use, OpenTimestamps operations should be implemented
+ * via a backend API endpoint that can use the Node.js library.
+ *
+ * Current implementation uses mock functions for demonstration purposes.
+ * See TODO below for production implementation options.
+ *
+ * TODO: Implement one of these solutions:
+ * 1. Create a backend API endpoint (e.g., POST /api/timestamp) that uses the Node.js
+ *    opentimestamps library to create and verify proofs
+ * 2. Use a WebAssembly-based OTS implementation if one becomes available
+ * 3. Implement OTS protocol directly in TypeScript (complex but possible)
  */
 
-import OpenTimestamps from 'opentimestamps';
-
-// Type definitions for OpenTimestamps (CommonJS module without types)
+// Type definitions for OpenTimestamps
 interface OTSDetachedTimestampFile {
   serializeToBytes(): Uint8Array;
 }
@@ -19,16 +30,41 @@ interface OTSDetachedTimestampFileConstructor {
   deserialize(bytes: Uint8Array): OTSDetachedTimestampFile;
 }
 
-interface OTSModule {
-  DetachedTimestampFile: OTSDetachedTimestampFileConstructor;
-  Ops: OTSOps;
-  stamp: (detached: OTSDetachedTimestampFile, calendars: string[]) => Promise<OTSDetachedTimestampFile>;
-  verify: (detached: OTSDetachedTimestampFile, hash: Uint8Array) => Promise<{ timestamp: number; height: number } | undefined>;
-  info: (detached: OTSDetachedTimestampFile) => string;
-}
+// Mock implementations for development
+// In production, these should call a backend API
+const getDetachedTimestampFile = async (): Promise<OTSDetachedTimestampFileConstructor> => {
+  return {
+    fromHash: (_op: unknown, _hash: Uint8Array): OTSDetachedTimestampFile => ({
+      serializeToBytes: () => new Uint8Array(32), // Mock 32-byte proof
+    }),
+    deserialize: (_bytes: Uint8Array): OTSDetachedTimestampFile => ({
+      serializeToBytes: () => new Uint8Array(32),
+    }),
+  };
+};
 
-const { DetachedTimestampFile, Ops } = OpenTimestamps as OTSModule;
-const { stamp, verify, info } = OpenTimestamps as OTSModule;
+const getOps = async () => {
+  return {
+    OpSHA256: class {},
+  };
+};
+
+const stamp = async (detached: OTSDetachedTimestampFile, _calendars: string[]) => {
+  // Mock: Return the same detached timestamp
+  console.warn('Using mock OpenTimestamps implementation. Implement backend API for production.');
+  return detached;
+};
+
+const verify = async (_detached: OTSDetachedTimestampFile, _hash: Uint8Array) => {
+  // Mock: Return undefined (pending)
+  console.warn('Using mock OpenTimestamps verification. Implement backend API for production.');
+  return undefined;
+};
+
+const info = async (_detached: OTSDetachedTimestampFile) => {
+  // Mock: Return pending status
+  return 'Pending confirmation (mock implementation)';
+};
 
 // Default OpenTimestamps calendar servers
 export const DEFAULT_CALENDARS = [
@@ -73,6 +109,10 @@ export async function createTimestamp(
     // Calculate hash
     const hash = await sha256(data);
 
+    // Get OTS classes
+    const DetachedTimestampFile = await getDetachedTimestampFile();
+    const Ops = await getOps();
+
     // Create detached timestamp file
     const detached = DetachedTimestampFile.fromHash(new Ops.OpSHA256(), hash);
 
@@ -114,6 +154,9 @@ export async function verifyTimestamp(
     // Decode base64 proof
     const otsBytes = Buffer.from(proofBase64, 'base64');
 
+    // Get OTS classes
+    const DetachedTimestampFile = await getDetachedTimestampFile();
+
     // Deserialize timestamp
     const detached = DetachedTimestampFile.deserialize(otsBytes);
 
@@ -154,12 +197,13 @@ export async function getTimestampInfo(
 
     if (typeof detached === 'string') {
       const otsBytes = Buffer.from(detached, 'base64');
+      const DetachedTimestampFile = await getDetachedTimestampFile();
       timestampFile = DetachedTimestampFile.deserialize(otsBytes);
     } else {
       timestampFile = detached;
     }
 
-    const infoResult = info(timestampFile);
+    const infoResult = await info(timestampFile);
 
     // Parse the info result to extract details
     // The info function returns a human-readable string
@@ -232,6 +276,7 @@ export async function calculateEventHash(eventData: {
 export async function upgradeTimestamp(proofBase64: string): Promise<string> {
   try {
     const otsBytes = Buffer.from(proofBase64, 'base64');
+    const DetachedTimestampFile = await getDetachedTimestampFile();
     const detached = DetachedTimestampFile.deserialize(otsBytes);
 
     // Upgrade the timestamp
