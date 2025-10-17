@@ -1,5 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { usePaper, getPaperMetadata } from '@/hooks/usePapers';
 import { usePaperReviews, getReviewStats } from '@/hooks/useReviews';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -75,6 +77,7 @@ export default function PaperDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <Button asChild variant="ghost" className="mb-6">
@@ -170,9 +173,9 @@ export default function PaperDetail() {
                       </a>
                     </Button>
                   )}
-                  
+
                   <ZapButton event={paper} />
-                  
+
                   <WriteReviewDialog paperAddress={`32623:${author}:${id}`} />
                 </div>
               </CardContent>
@@ -186,7 +189,7 @@ export default function PaperDetail() {
                     <MessageSquare className="h-5 w-5" />
                     Peer Reviews ({reviewStats.total})
                   </CardTitle>
-                  
+
                   {reviewStats.averageRating && (
                     <div className="flex items-center gap-2">
                       <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
@@ -230,7 +233,7 @@ export default function PaperDetail() {
                   label="Block Height"
                   value={`#${metadata.blockHeight}`}
                 />
-                
+
                 <MetadataItem
                   icon={<Shield className="h-4 w-4" />}
                   label="Block Hash"
@@ -333,6 +336,7 @@ export default function PaperDetail() {
 function PaperDetailSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <Skeleton className="h-10 w-32 mb-6" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">

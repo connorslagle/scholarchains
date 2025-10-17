@@ -6,6 +6,8 @@ import { NIP19Page } from "./pages/NIP19Page";
 import NotFound from "./pages/NotFound";
 import PublishPaper from "./pages/PublishPaper";
 import PaperDetail from "./pages/PaperDetail";
+import About from "./pages/About";
+import ReviewProcess from "./pages/ReviewProcess";
 
 export function AppRouter() {
   return (
@@ -16,6 +18,8 @@ export function AppRouter() {
         <Route path="/publish" element={<PublishPaper />} />
         <Route path="/paper/:author/:id" element={<PaperDetail />} />
         <Route path="/explore" element={<Index />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/review-process" element={<ReviewProcess />} />
         {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1 */}
         <Route path="/:nip19" element={<NIP19Page />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

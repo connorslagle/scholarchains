@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { useNavigate } from 'react-router-dom';
+import { Header } from '@/components/Header';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useUploadFile } from '@/hooks/useUploadFile';
@@ -141,7 +142,7 @@ export default function PublishPaper() {
       const fileMetadata = await uploadFile(file);
       const blobHash = fileMetadata[0][1]; // Extract hash from first tag
       const blobUrl = fileMetadata.find(([name]) => name === 'url')?.[1] || '';
-      
+
       setUploadProgress(50);
 
       // Step 2: Get Bitcoin block for anchoring
@@ -242,6 +243,7 @@ export default function PublishPaper() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <Button asChild variant="ghost" className="mb-6">
           <Link to="/">
