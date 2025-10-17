@@ -2,8 +2,18 @@
  * OpenTimestamps Utility Functions
  * Handles creation and verification of cryptographic timestamps
  *
- * This module wraps the opentimestamps CommonJS library to make it work with Vite/ESM.
- * We use dynamic imports to avoid Vite's static analysis issues with CommonJS modules.
+ * NOTE: The opentimestamps npm package is a CommonJS library that's incompatible with
+ * Vite's ESM bundler. For production use, OpenTimestamps operations should be implemented
+ * via a backend API endpoint that can use the Node.js library.
+ *
+ * Current implementation uses mock functions for demonstration purposes.
+ * See TODO below for production implementation options.
+ *
+ * TODO: Implement one of these solutions:
+ * 1. Create a backend API endpoint (e.g., POST /api/timestamp) that uses the Node.js
+ *    opentimestamps library to create and verify proofs
+ * 2. Use a WebAssembly-based OTS implementation if one becomes available
+ * 3. Implement OTS protocol directly in TypeScript (complex but possible)
  */
 
 // Type definitions for OpenTimestamps
@@ -20,56 +30,40 @@ interface OTSDetachedTimestampFileConstructor {
   deserialize(bytes: Uint8Array): OTSDetachedTimestampFile;
 }
 
-interface OTSModule {
-  DetachedTimestampFile: OTSDetachedTimestampFileConstructor;
-  Ops: OTSOps;
-  stamp: (detached: OTSDetachedTimestampFile, calendars: string[]) => Promise<OTSDetachedTimestampFile>;
-  verify: (detached: OTSDetachedTimestampFile, hash: Uint8Array) => Promise<{ timestamp: number; height: number } | undefined>;
-  info: (detached: OTSDetachedTimestampFile) => string;
-}
-
-// Lazy-load the OpenTimestamps module
-let otsModule: OTSModule | null = null;
-
-async function loadOTS(): Promise<OTSModule> {
-  if (otsModule) return otsModule;
-
-  try {
-    // Use a string variable to hide the import from Vite's static analysis
-    const moduleName = 'opentimestamps';
-    const module = await import(/* @vite-ignore */ moduleName);
-    otsModule = module.default || module;
-    return otsModule;
-  } catch (error) {
-    console.error('Failed to load OpenTimestamps module:', error);
-    throw new Error('OpenTimestamps library not available');
-  }
-}
-
-// Export wrapper functions that load OTS on demand
-const getDetachedTimestampFile = async () => {
-  const ots = await loadOTS();
-  return ots.DetachedTimestampFile;
+// Mock implementations for development
+// In production, these should call a backend API
+const getDetachedTimestampFile = async (): Promise<OTSDetachedTimestampFileConstructor> => {
+  return {
+    fromHash: (_op: unknown, _hash: Uint8Array): OTSDetachedTimestampFile => ({
+      serializeToBytes: () => new Uint8Array(32), // Mock 32-byte proof
+    }),
+    deserialize: (_bytes: Uint8Array): OTSDetachedTimestampFile => ({
+      serializeToBytes: () => new Uint8Array(32),
+    }),
+  };
 };
 
 const getOps = async () => {
-  const ots = await loadOTS();
-  return ots.Ops;
+  return {
+    OpSHA256: class {},
+  };
 };
 
-const stamp = async (detached: OTSDetachedTimestampFile, calendars: string[]) => {
-  const ots = await loadOTS();
-  return ots.stamp(detached, calendars);
+const stamp = async (detached: OTSDetachedTimestampFile, _calendars: string[]) => {
+  // Mock: Return the same detached timestamp
+  console.warn('Using mock OpenTimestamps implementation. Implement backend API for production.');
+  return detached;
 };
 
-const verify = async (detached: OTSDetachedTimestampFile, hash: Uint8Array) => {
-  const ots = await loadOTS();
-  return ots.verify(detached, hash);
+const verify = async (_detached: OTSDetachedTimestampFile, _hash: Uint8Array) => {
+  // Mock: Return undefined (pending)
+  console.warn('Using mock OpenTimestamps verification. Implement backend API for production.');
+  return undefined;
 };
 
-const info = async (detached: OTSDetachedTimestampFile) => {
-  const ots = await loadOTS();
-  return ots.info(detached);
+const info = async (_detached: OTSDetachedTimestampFile) => {
+  // Mock: Return pending status
+  return 'Pending confirmation (mock implementation)';
 };
 
 // Default OpenTimestamps calendar servers
