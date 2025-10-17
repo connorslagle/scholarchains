@@ -28,24 +28,4 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    commonjsOptions: {
-      ignoreDynamicRequires: true,
-      transformMixedEsModules: true,
-    },
-    rollupOptions: {
-      external: [],
-    },
-  },
-  optimizeDeps: {
-    include: ['opentimestamps'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
-  },
-  define: {
-    global: 'globalThis',
-  },
 }));

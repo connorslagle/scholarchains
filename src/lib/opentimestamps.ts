@@ -1,11 +1,12 @@
 /**
  * OpenTimestamps Utility Functions
  * Handles creation and verification of cryptographic timestamps
+ *
+ * This module wraps the opentimestamps CommonJS library to make it work with Vite/ESM.
+ * We use dynamic imports to avoid Vite's static analysis issues with CommonJS modules.
  */
 
-import OpenTimestamps from 'opentimestamps';
-
-// Type definitions for OpenTimestamps (CommonJS module without types)
+// Type definitions for OpenTimestamps
 interface OTSDetachedTimestampFile {
   serializeToBytes(): Uint8Array;
 }
@@ -27,8 +28,48 @@ interface OTSModule {
   info: (detached: OTSDetachedTimestampFile) => string;
 }
 
-const { DetachedTimestampFile, Ops } = OpenTimestamps as OTSModule;
-const { stamp, verify, info } = OpenTimestamps as OTSModule;
+// Lazy-load the OpenTimestamps module
+let otsModule: OTSModule | null = null;
+
+async function loadOTS(): Promise<OTSModule> {
+  if (otsModule) return otsModule;
+
+  try {
+    // Dynamic import to avoid Vite static analysis
+    const module = await import('opentimestamps');
+    otsModule = module.default || module;
+    return otsModule;
+  } catch (error) {
+    console.error('Failed to load OpenTimestamps module:', error);
+    throw new Error('OpenTimestamps library not available');
+  }
+}
+
+// Export wrapper functions that load OTS on demand
+const getDetachedTimestampFile = async () => {
+  const ots = await loadOTS();
+  return ots.DetachedTimestampFile;
+};
+
+const getOps = async () => {
+  const ots = await loadOTS();
+  return ots.Ops;
+};
+
+const stamp = async (detached: OTSDetachedTimestampFile, calendars: string[]) => {
+  const ots = await loadOTS();
+  return ots.stamp(detached, calendars);
+};
+
+const verify = async (detached: OTSDetachedTimestampFile, hash: Uint8Array) => {
+  const ots = await loadOTS();
+  return ots.verify(detached, hash);
+};
+
+const info = async (detached: OTSDetachedTimestampFile) => {
+  const ots = await loadOTS();
+  return ots.info(detached);
+};
 
 // Default OpenTimestamps calendar servers
 export const DEFAULT_CALENDARS = [
@@ -73,6 +114,10 @@ export async function createTimestamp(
     // Calculate hash
     const hash = await sha256(data);
 
+    // Get OTS classes
+    const DetachedTimestampFile = await getDetachedTimestampFile();
+    const Ops = await getOps();
+
     // Create detached timestamp file
     const detached = DetachedTimestampFile.fromHash(new Ops.OpSHA256(), hash);
 
@@ -114,6 +159,9 @@ export async function verifyTimestamp(
     // Decode base64 proof
     const otsBytes = Buffer.from(proofBase64, 'base64');
 
+    // Get OTS classes
+    const DetachedTimestampFile = await getDetachedTimestampFile();
+
     // Deserialize timestamp
     const detached = DetachedTimestampFile.deserialize(otsBytes);
 
@@ -154,12 +202,13 @@ export async function getTimestampInfo(
 
     if (typeof detached === 'string') {
       const otsBytes = Buffer.from(detached, 'base64');
+      const DetachedTimestampFile = await getDetachedTimestampFile();
       timestampFile = DetachedTimestampFile.deserialize(otsBytes);
     } else {
       timestampFile = detached;
     }
 
-    const infoResult = info(timestampFile);
+    const infoResult = await info(timestampFile);
 
     // Parse the info result to extract details
     // The info function returns a human-readable string
@@ -232,6 +281,7 @@ export async function calculateEventHash(eventData: {
 export async function upgradeTimestamp(proofBase64: string): Promise<string> {
   try {
     const otsBytes = Buffer.from(proofBase64, 'base64');
+    const DetachedTimestampFile = await getDetachedTimestampFile();
     const detached = DetachedTimestampFile.deserialize(otsBytes);
 
     // Upgrade the timestamp
