@@ -1,0 +1,187 @@
+# ScholarChains
+
+**Decentralized Scholarly Publishing on Nostr with Bitcoin-Anchored Timestamps**
+
+ScholarChains is a censorship-resistant research publishing platform that combines three proven protocols:
+- **Nostr** for metadata distribution
+- **Blossom** for content-addressable file storage  
+- **Bitcoin** for cryptographic timestamping
+
+## 🌟 Features
+
+### Core Functionality
+- **Publish Research Papers**: Upload PDFs to Blossom, publish metadata to Nostr
+- **Peer Review System**: Write signed, public reviews with ratings and verdicts
+- **Bitcoin Timestamping**: Every paper includes current Bitcoin block hash for provenance
+- **Lightning Tips**: Reward authors and reviewers with instant micro-payments
+- **Reputation System**: Build credibility through quality contributions
+- **Search & Discovery**: Find papers by topic, author, subject classification
+
+### Technical Highlights
+- Custom Nostr event kinds (32623 for papers, 4597 for reviews)
+- NIP-B7 Blossom integration for decentralized file storage
+- NIP-57 Lightning zaps for direct payments
+- Bitcoin block-hash anchoring (zero on-chain costs)
+- Full TypeScript type safety
+- React 18 with TailwindCSS and shadcn/ui
+
+## 📚 Documentation
+
+See `/NIP.md` for the complete protocol specification including:
+- Event kind definitions
+- Tag schemas
+- Bitcoin anchoring implementation
+- File storage with Blossom
+- Security considerations
+
+## 🚀 Quick Start
+
+### Development
+```bash
+npm install
+npm run dev
+```
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Run Tests
+```bash
+npm test
+```
+
+## 📖 Page Structure
+
+- **Home** (`/`) - Hero, featured section, and paper feed
+- **Publish** (`/publish`) - Form to publish new research papers
+- **Paper Detail** (`/paper/:author/:id`) - View paper, metadata, and reviews
+- **About** (`/about`) - Platform architecture and motivation
+- **Review Process** (`/review-process`) - Detailed peer review documentation
+- **Explore** (`/explore`) - Browse and search all papers
+
+## 🏗️ Architecture
+
+### Custom Nostr Events
+
+**Kind 32623: Research Paper (Addressable)**
+```json
+{
+  "kind": 32623,
+  "tags": [
+    ["d", "unique-paper-id"],
+    ["title", "Paper Title"],
+    ["summary", "Abstract"],
+    ["published_at", "1708774162"],
+    ["b", "830000", "block-hash"],
+    ["h", "blob-sha256-hash"],
+    ["url", "https://blossom.server/hash.pdf"],
+    ["subject", "cs.CR"],
+    ["license", "CC-BY-4.0"],
+    ["t", "topic1"],
+    ["t", "topic2"]
+  ]
+}
+```
+
+**Kind 4597: Peer Review (Regular)**
+```json
+{
+  "kind": 4597,
+  "content": "## Review\n\nDetailed feedback...",
+  "tags": [
+    ["a", "32623:author-pubkey:paper-id"],
+    ["p", "author-pubkey"],
+    ["b", "830100", "block-hash"],
+    ["verdict", "accept"],
+    ["rating", "8"],
+    ["aspect", "methodology"],
+    ["aspect", "novelty"]
+  ]
+}
+```
+
+## 🔧 Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: TailwindCSS 3, shadcn/ui components
+- **Nostr**: @nostrify/nostrify, @nostrify/react
+- **State**: TanStack Query (React Query)
+- **Routing**: React Router v6
+- **Lightning**: NIP-57 Zaps via Nostr Wallet Connect
+- **File Storage**: Blossom (NIP-B7)
+- **Timestamps**: Bitcoin block hashes (via public APIs)
+
+## 🎨 Design Features
+
+- Immersive hero sections with animated gradients
+- Responsive mobile-first design
+- Dark mode support with theme toggle
+- Skeleton loading states
+- Empty states with relay switching
+- Toast notifications for user feedback
+- Progress bars for multi-step processes
+
+## 🔐 Security
+
+- All events cryptographically signed
+- Bitcoin block-hash anchoring prevents backdating
+- Blossom files are content-addressable (SHA-256)
+- No private data stored on relays
+- Public, transparent peer review by design
+
+## 🌐 Decentralization
+
+- No central servers or databases
+- Works with any Nostr relay
+- Files retrievable from any Blossom server
+- Client-side reputation calculations
+- No gatekeeping or permissions
+
+## 📝 Protocol Benefits
+
+### For Authors
+- Permanent, censorship-resistant publication
+- Provable timestamps without fees
+- Direct Lightning tips from readers
+- Build public reputation
+
+### For Reviewers  
+- Earn Lightning tips for quality reviews
+- Public recognition and reputation
+- Immutable credit for contributions
+- No gatekeepers deciding who can review
+
+### For Readers
+- Free, open access to all research
+- Transparent peer review process
+- Verify authenticity via signatures
+- Support authors with micro-payments
+
+## 🚧 Future Enhancements
+
+Possible additions documented in `NIP.md`:
+- Data availability proofs for large datasets
+- Daily Merkle root anchoring on Bitcoin
+- Citation graph analytics
+- Integration with ORCID and scholarly identifiers
+- Conference and journal organization events
+- Preprint vs. final version workflows
+
+## 📜 License
+
+Open source (see repository for specific license)
+
+## 🙏 Credits
+
+Built with [MKStack](https://soapbox.pub/mkstack)
+
+Powered by:
+- [Nostr Protocol](https://github.com/nostr-protocol/nips)
+- [Blossom](https://github.com/hzrd149/blossom)
+- [Bitcoin](https://bitcoin.org)
+
+---
+
+**Join the revolution in scholarly publishing. No permissions. No gatekeepers. No censorship.**
