@@ -35,8 +35,9 @@ async function loadOTS(): Promise<OTSModule> {
   if (otsModule) return otsModule;
 
   try {
-    // Dynamic import to avoid Vite static analysis
-    const module = await import('opentimestamps');
+    // Use a string variable to hide the import from Vite's static analysis
+    const moduleName = 'opentimestamps';
+    const module = await import(/* @vite-ignore */ moduleName);
     otsModule = module.default || module;
     return otsModule;
   } catch (error) {
