@@ -1,0 +1,69 @@
+services:
+  # ============================================
+  # Production Service
+  # Multi-stage build with Nginx
+  # ============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: scholarchains:latest
+    container_name: scholarchains-prod
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - scholarchains-network
+    labels:
+      - "com.scholarchains.service=production"
+      - "com.scholarchains.version=1.0"
+
+  # ============================================
+  # Development Service
+  # Vite dev server with HMR
+  # ============================================
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: scholarchains:dev
+    container_name: scholarchains-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source code for live reload
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tailwind.config.ts:/app/tailwind.config.ts:ro
+      - ./postcss.config.js:/app/postcss.config.js:ro
+      # Exclude node_modules from volume mount (use container's)
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_HMR_PROTOCOL=ws
+      - VITE_HMR_HOST=localhost
+      - VITE_HMR_PORT=8080
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - scholarchains-network
+    labels:
+      - "com.scholarchains.service=development"
+      - "com.scholarchains.version=dev"
+
+networks:
+  scholarchains-network:
+    driver: bridge
+    name: scholarchains-net

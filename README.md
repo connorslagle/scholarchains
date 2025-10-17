@@ -36,18 +36,40 @@ See `/NIP.md` for the complete protocol specification including:
 
 ## 🚀 Quick Start
 
-### Development
+### Option 1: Docker (Recommended)
+
+**Production**:
+```bash
+# Build and run with Docker Compose
+docker-compose up -d app
+
+# Access at http://localhost
+```
+
+**Development with HMR**:
+```bash
+# Start development server with hot reload
+docker-compose up app-dev
+
+# Access at http://localhost:8080
+```
+
+See [Docker Guide](docs/DOCKER.md) for detailed instructions.
+
+### Option 2: Local Development
+
+**Development**:
 ```bash
 npm install
 npm run dev
 ```
 
-### Build for Production
+**Build for Production**:
 ```bash
 npm run build
 ```
 
-### Run Tests
+**Run Tests**:
 ```bash
 npm test
 ```
@@ -158,6 +180,47 @@ npm test
 - Transparent peer review process
 - Verify authenticity via signatures
 - Support authors with micro-payments
+
+## 🐳 Docker Deployment
+
+ScholarChains includes production-ready Docker support with multi-stage builds.
+
+### Quick Start
+
+```bash
+# Production (optimized, ~25MB image)
+docker-compose up -d app
+
+# Development (with hot reload)
+docker-compose up app-dev
+```
+
+### Features
+
+- ✅ **Multi-stage builds** - Small production images (~25MB)
+- ✅ **Nginx optimized** - Fast static file serving
+- ✅ **Development mode** - Hot Module Replacement (HMR)
+- ✅ **Health checks** - Automatic container restart
+- ✅ **Security hardened** - Non-root user, minimal base image
+
+### Documentation
+
+See [Docker Guide](docs/DOCKER.md) for:
+- Detailed setup instructions
+- Environment variables
+- Cloud deployment guides
+- Troubleshooting tips
+- Performance optimization
+
+### Cloud Platforms
+
+Compatible with:
+- AWS ECS/Fargate
+- Google Cloud Run
+- Azure Container Instances
+- DigitalOcean
+- Fly.io
+- Railway
 
 ## 🚧 Future Enhancements
 
