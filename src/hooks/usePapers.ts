@@ -17,15 +17,21 @@ function validatePaper(event: NostrEvent): event is PaperEvent {
   const d = event.tags.find(([name]) => name === 'd')?.[1];
   const title = event.tags.find(([name]) => name === 'title')?.[1];
   const publishedAt = event.tags.find(([name]) => name === 'published_at')?.[1];
-  const b = event.tags.find(([name]) => name === 'b');
   const h = event.tags.find(([name]) => name === 'h')?.[1];
 
-  if (!d || !title || !publishedAt || !b || !h) return false;
+  if (!d || !title || !publishedAt || !h) return false;
 
-  // Bitcoin block hash should have height and hash
-  if (b.length < 3 || !b[1] || !b[2]) return false;
+  // Must have either OpenTimestamps proof OR legacy Bitcoin block hash
+  const ots = event.tags.find(([name]) => name === 'ots')?.[1];
+  const b = event.tags.find(([name]) => name === 'b');
 
-  return true;
+  // Check for OTS proof (new format)
+  if (ots) return true;
+
+  // Check for legacy Bitcoin block hash format
+  if (b && b.length >= 3 && b[1] && b[2]) return true;
+
+  return false;
 }
 
 /**
@@ -33,12 +39,14 @@ function validatePaper(event: NostrEvent): event is PaperEvent {
  */
 export function getPaperMetadata(event: PaperEvent) {
   const tags = event.tags;
-  
+
   return {
     id: event.tags.find(([name]) => name === 'd')?.[1] || '',
     title: tags.find(([name]) => name === 'title')?.[1] || 'Untitled',
     summary: tags.find(([name]) => name === 'summary')?.[1] || event.content,
     publishedAt: parseInt(tags.find(([name]) => name === 'published_at')?.[1] || '0'),
+    otsProof: tags.find(([name]) => name === 'ots')?.[1] || '',
+    // Legacy support for old block height/hash format
     blockHeight: tags.find(([name]) => name === 'b')?.[1] || '',
     blockHash: tags.find(([name]) => name === 'b')?.[2] || '',
     blobHash: tags.find(([name]) => name === 'h')?.[1] || '',

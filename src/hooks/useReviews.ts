@@ -16,14 +16,20 @@ function validateReview(event: NostrEvent): event is ReviewEvent {
   // Required tags
   const a = event.tags.find(([name]) => name === 'a')?.[1];
   const p = event.tags.find(([name]) => name === 'p')?.[1];
+
+  if (!a || !p) return false;
+
+  // Must have either OpenTimestamps proof OR legacy Bitcoin block hash
+  const ots = event.tags.find(([name]) => name === 'ots')?.[1];
   const b = event.tags.find(([name]) => name === 'b');
 
-  if (!a || !p || !b) return false;
+  // Check for OTS proof (new format)
+  if (ots) return true;
 
-  // Bitcoin block hash should have height and hash
-  if (b.length < 3 || !b[1] || !b[2]) return false;
+  // Check for legacy Bitcoin block hash format
+  if (b && b.length >= 3 && b[1] && b[2]) return true;
 
-  return true;
+  return false;
 }
 
 /**
@@ -31,10 +37,12 @@ function validateReview(event: NostrEvent): event is ReviewEvent {
  */
 export function getReviewMetadata(event: ReviewEvent) {
   const tags = event.tags;
-  
+
   return {
     paperAddress: tags.find(([name]) => name === 'a')?.[1] || '',
     authorPubkey: tags.find(([name]) => name === 'p')?.[1] || '',
+    otsProof: tags.find(([name]) => name === 'ots')?.[1] || '',
+    // Legacy support for old block height/hash format
     blockHeight: tags.find(([name]) => name === 'b')?.[1] || '',
     blockHash: tags.find(([name]) => name === 'b')?.[2] || '',
     rating: tags.find(([name]) => name === 'rating')?.[1],
