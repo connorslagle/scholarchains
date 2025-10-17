@@ -1,23 +1,19 @@
 import { useSeoMeta } from '@unhead/react';
-
-// FIXME: Update this page (the content is just a fallback if you fail to update the page)
+import { Hero } from '@/components/Hero';
+import { PaperFeed } from '@/components/PaperFeed';
+import { FeaturedSection } from '@/components/FeaturedSection';
 
 const Index = () => {
   useSeoMeta({
-    title: 'Welcome to Your Blank App',
-    description: 'A modern Nostr client application built with React, TailwindCSS, and Nostrify.',
+    title: 'ScholarChains - Decentralized Scholarly Publishing',
+    description: 'Censorship-resistant research publishing on Nostr with Bitcoin-anchored timestamps. Publish papers, share datasets, and receive peer reviews in a fully open and decentralized ecosystem.',
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-          Welcome to Your Blank App
-        </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
-          Start building your amazing project here!
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+      <Hero />
+      <FeaturedSection />
+      <PaperFeed />
     </div>
   );
 };
