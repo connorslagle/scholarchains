@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useCreateTimestamp } from '@/hooks/useOpenTimestamps';
 import {
   Select,
   SelectContent,
@@ -39,7 +40,8 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
   const { user } = useCurrentUser();
   const { mutate: createEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
-  
+  const { createTimestamp, isCreating: isTimestamping } = useCreateTimestamp();
+
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState('');
   const [rating, setRating] = useState<number[]>([7]);
@@ -66,11 +68,9 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
     }
 
     try {
-      // Get current Bitcoin block for anchoring
-      const blockResponse = await fetch('https://blockstream.info/api/blocks/tip/height');
-      const blockHeight = await blockResponse.text();
-      const blockHashResponse = await fetch(`https://blockstream.info/api/block-height/${blockHeight}`);
-      const blockHash = await blockHashResponse.text();
+      // Create OpenTimestamps proof for the review
+      const reviewData = `${paperAddress}:${verdict}:${rating[0]}:${Date.now()}`;
+      const timestampResult = await createTimestamp(reviewData);
 
       // Parse the paper address to get author pubkey
       const [, authorPubkey] = paperAddress.split(':');
@@ -78,7 +78,7 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
       const tags: string[][] = [
         ['a', paperAddress],
         ['p', authorPubkey],
-        ['b', blockHeight, blockHash],
+        ['ots', timestampResult.proof],
         ['verdict', verdict],
         ['rating', rating[0].toString()],
       ];
@@ -118,7 +118,7 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
     } catch {
       toast({
         title: 'Error',
-        description: 'Failed to fetch Bitcoin block data',
+        description: 'Failed to create timestamp proof',
         variant: 'destructive',
       });
     }
@@ -224,15 +224,15 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending || isTimestamping}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isPending || !user || content.trim().length === 0}
+            disabled={isPending || isTimestamping || !user || content.trim().length === 0}
             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
-            {isPending ? 'Publishing...' : 'Publish Review'}
+            {isPending || isTimestamping ? 'Publishing...' : 'Publish Review'}
           </Button>
         </DialogFooter>
       </DialogContent>

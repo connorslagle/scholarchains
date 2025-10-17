@@ -26,6 +26,27 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      'opentimestamps': path.resolve(__dirname, './node_modules/opentimestamps/index.js'),
     },
+  },
+  build: {
+    commonjsOptions: {
+      ignoreDynamicRequires: true,
+      transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      external: [],
+    },
+  },
+  optimizeDeps: {
+    include: ['opentimestamps'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
+  define: {
+    global: 'globalThis',
   },
 }));

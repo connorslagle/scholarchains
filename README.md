@@ -1,18 +1,19 @@
 # ScholarChains
 
-**Decentralized Scholarly Publishing on Nostr with Bitcoin-Anchored Timestamps**
+**Decentralized Scholarly Publishing on Nostr with OpenTimestamps**
 
 ScholarChains is a censorship-resistant research publishing platform that combines three proven protocols:
 - **Nostr** for metadata distribution
-- **Blossom** for content-addressable file storage  
-- **Bitcoin** for cryptographic timestamping
+- **Blossom** for content-addressable file storage
+- **OpenTimestamps** for Bitcoin-based cryptographic timestamping
 
 ## 🌟 Features
 
 ### Core Functionality
 - **Publish Research Papers**: Upload PDFs to Blossom, publish metadata to Nostr
 - **Peer Review System**: Write signed, public reviews with ratings and verdicts
-- **Bitcoin Timestamping**: Every paper includes current Bitcoin block hash for provenance
+- **OpenTimestamps**: Every paper and review gets a cryptographic timestamp proof anchored to Bitcoin
+- **Timestamp Verification**: Verify and download .ots proof files for offline validation
 - **Lightning Tips**: Reward authors and reviewers with instant micro-payments
 - **Reputation System**: Build credibility through quality contributions
 - **Search & Discovery**: Find papers by topic, author, subject classification
@@ -21,7 +22,8 @@ ScholarChains is a censorship-resistant research publishing platform that combin
 - Custom Nostr event kinds (32623 for papers, 4597 for reviews)
 - NIP-B7 Blossom integration for decentralized file storage
 - NIP-57 Lightning zaps for direct payments
-- Bitcoin block-hash anchoring (zero on-chain costs)
+- OpenTimestamps integration for tamper-proof timestamps (zero on-chain costs)
+- Calendar server aggregation for efficient Bitcoin anchoring
 - Full TypeScript type safety
 - React 18 with TailwindCSS and shadcn/ui
 
@@ -30,9 +32,9 @@ ScholarChains is a censorship-resistant research publishing platform that combin
 See `/NIP.md` for the complete protocol specification including:
 - Event kind definitions
 - Tag schemas
-- Bitcoin anchoring implementation
+- OpenTimestamps implementation details
 - File storage with Blossom
-- Security considerations
+- Security considerations and verification processes
 
 ## 🚀 Quick Start
 
@@ -96,7 +98,7 @@ npm test
     ["title", "Paper Title"],
     ["summary", "Abstract"],
     ["published_at", "1708774162"],
-    ["b", "830000", "block-hash"],
+    ["ots", "AE9wcGVuc...base64-encoded-opentimestamps-proof..."],
     ["h", "blob-sha256-hash"],
     ["url", "https://blossom.server/hash.pdf"],
     ["subject", "cs.CR"],
@@ -115,7 +117,7 @@ npm test
   "tags": [
     ["a", "32623:author-pubkey:paper-id"],
     ["p", "author-pubkey"],
-    ["b", "830100", "block-hash"],
+    ["ots", "BE9wcGVuc...base64-encoded-opentimestamps-proof..."],
     ["verdict", "accept"],
     ["rating", "8"],
     ["aspect", "methodology"],

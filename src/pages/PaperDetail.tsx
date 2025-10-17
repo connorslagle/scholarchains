@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { ReviewCard } from '@/components/ReviewCard';
 import { WriteReviewDialog } from '@/components/WriteReviewDialog';
+import { TimestampVerification } from '@/components/TimestampVerification';
 import {
   ArrowLeft,
   Download,
@@ -221,27 +222,48 @@ export default function PaperDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Timestamp Verification Card */}
+            {metadata.otsProof && (
+              <Card className="border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardHeader>
+                  <CardTitle className="text-lg">Cryptographic Timestamp</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TimestampVerification
+                    otsProof={metadata.otsProof}
+                    data={`${metadata.id}:${metadata.title}:${metadata.blobHash}:${metadata.publishedAt}`}
+                    filename={`${metadata.id}.ots`}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Metadata Card */}
             <Card className="border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="text-lg">Paper Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
-                <MetadataItem
-                  icon={<Bitcoin className="h-4 w-4" />}
-                  label="Block Height"
-                  value={`#${metadata.blockHeight}`}
-                />
+                {/* Legacy block height/hash support for older papers */}
+                {!metadata.otsProof && metadata.blockHeight && (
+                  <>
+                    <MetadataItem
+                      icon={<Bitcoin className="h-4 w-4" />}
+                      label="Block Height"
+                      value={`#${metadata.blockHeight}`}
+                    />
 
-                <MetadataItem
-                  icon={<Shield className="h-4 w-4" />}
-                  label="Block Hash"
-                  value={
-                    <code className="text-xs break-all font-mono">
-                      {metadata.blockHash.slice(0, 16)}...
-                    </code>
-                  }
-                />
+                    <MetadataItem
+                      icon={<Shield className="h-4 w-4" />}
+                      label="Block Hash"
+                      value={
+                        <code className="text-xs break-all font-mono">
+                          {metadata.blockHash.slice(0, 16)}...
+                        </code>
+                      }
+                    />
+                  </>
+                )}
 
                 {metadata.license && (
                   <MetadataItem

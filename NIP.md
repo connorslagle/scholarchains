@@ -2,7 +2,7 @@
 
 ## Abstract
 
-ScholarChains is a censorship-resistant scholarly publishing platform built on Nostr, Blossom, and Bitcoin block-hash anchoring. This document defines custom Nostr event kinds for research papers, peer reviews, and Bitcoin-anchored proofs of existence.
+ScholarChains is a censorship-resistant scholarly publishing platform built on Nostr, Blossom, and OpenTimestamps. This document defines custom Nostr event kinds for research papers, peer reviews, and cryptographic proofs of existence using Bitcoin timestamps.
 
 ## Motivation
 
@@ -16,7 +16,7 @@ Centralized academic repositories (arXiv, institutional repositories) suffer fro
 ScholarChains solves these problems by combining:
 - **Blossom** (content-addressable storage) for immutable file storage
 - **Nostr** (relay-based pub/sub) for censorship-resistant metadata
-- **Bitcoin block-hash anchoring** for cryptographic timestamps
+- **OpenTimestamps** (Bitcoin-based timestamping) for cryptographic proof of existence
 
 ## Event Kinds
 
@@ -32,7 +32,7 @@ An addressable event representing a published research paper. Uses NIP-23 (Long-
 - `a` (optional) - References to other papers (`32623:<pubkey>:<d-tag>`)
 - `p` (optional) - Co-author pubkeys
 - `t` (optional) - Topic tags/keywords
-- `b` (required) - Bitcoin block hash and height: `["b", "<height>", "<block-hash>"]`
+- `ots` (required) - OpenTimestamps proof (base64-encoded): `["ots", "<base64-proof>"]`
 - `h` (required) - Blossom blob hash(es): `["h", "<sha256-hash>"]`
 - `url` (required) - Blossom server URL(s) for the file
 - `m` (optional) - MIME type (e.g., `application/pdf`)
@@ -57,9 +57,9 @@ An addressable event representing a published research paper. Uses NIP-23 (Long-
   "tags": [
     ["d", "decentralized-scholarly-publishing-2024"],
     ["title", "ScholarChains: A Censorship-Resistant Academic Publishing Protocol"],
-    ["summary", "Abstract: We present a novel approach to decentralized scholarly publishing using Nostr, Blossom, and Bitcoin block-hash anchoring..."],
+    ["summary", "Abstract: We present a novel approach to decentralized scholarly publishing using Nostr, Blossom, and OpenTimestamps..."],
     ["published_at", "1708774162"],
-    ["b", "830000", "00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054"],
+    ["ots", "AE9wcGVuc...base64encodedOTSproof...aW1lc3RhbXBz"],
     ["h", "e4bee088334cb5d38cff1616e964369c37b6081be997962ab289d6c671975d71"],
     ["url", "https://blossom.primal.net/e4bee088334cb5d38cff1616e964369c37b6081be997962ab289d6c671975d71.pdf"],
     ["m", "application/pdf"],
@@ -87,7 +87,7 @@ A permanent peer review comment on a research paper. Reviews are immutable recor
 - `a` (required) - Address of the paper being reviewed: `32623:<pubkey>:<d-tag>`
 - `A` (optional) - Root paper address (if reviewing a version)
 - `p` (required) - Pubkey of the paper author(s)
-- `b` (required) - Bitcoin block hash and height: `["b", "<height>", "<block-hash>"]`
+- `ots` (required) - OpenTimestamps proof (base64-encoded): `["ots", "<base64-proof>"]`
 - `rating` (optional) - Numerical rating (e.g., `1-5`, `1-10`)
 - `verdict` (optional) - Review verdict (`accept`, `reject`, `revise`, `comment`)
 - `aspect` (optional) - Aspect being reviewed (`methodology`, `results`, `clarity`, `novelty`, `reproducibility`)
@@ -107,7 +107,7 @@ A permanent peer review comment on a research paper. Reviews are immutable recor
   "tags": [
     ["a", "32623:author-pubkey:decentralized-scholarly-publishing-2024"],
     ["p", "author-pubkey"],
-    ["b", "830100", "00000000000000000001f2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3"],
+    ["ots", "BE9wcGVuc...base64encodedOTSproof...dGFtcHM="],
     ["verdict", "revise"],
     ["rating", "7"],
     ["aspect", "methodology"],
@@ -120,30 +120,41 @@ A permanent peer review comment on a research paper. Reviews are immutable recor
 }
 ```
 
-## Bitcoin Block Hash Anchoring
+## OpenTimestamps Cryptographic Proof
 
-All scholarly events (papers and reviews) MUST include a `b` tag with the current Bitcoin block hash:
+All scholarly events (papers and reviews) MUST include an `ots` tag with an OpenTimestamps proof:
 
 ```json
-["b", "<block-height>", "<block-hash>"]
+["ots", "<base64-encoded-proof>"]
 ```
 
 **Purpose:**
-- Provides cryptographic proof that the event existed no later than the block timestamp
-- Block hashes are unpredictable, preventing backdating
-- No on-chain transaction cost (read-only from block explorers)
-- Anchors event to Bitcoin's immutable ledger
+- Provides cryptographic proof that the data existed at a specific point in time
+- Uses the Bitcoin blockchain as a timestamp authority
+- Industry-standard timestamping protocol ([opentimestamps.org](https://opentimestamps.org))
+- No on-chain transaction cost (uses calendar servers and aggregation)
+- Verifiable by anyone with access to the Bitcoin blockchain
+
+**How OpenTimestamps Works:**
+1. Hash your data (SHA256)
+2. Submit hash to OpenTimestamps calendar servers
+3. Calendar servers aggregate multiple timestamps and commit to Bitcoin blockchain
+4. Proof can be upgraded once confirmed in a Bitcoin block
+5. Anyone can verify the proof using the Bitcoin blockchain
 
 **Implementation:**
-1. Fetch the latest Bitcoin block from a public API or node
-2. Add the `["b", height, hash]` tag to the event
-3. Sign and publish the event
+1. Create a unique data string for the event (e.g., paper ID + title + blob hash + timestamp)
+2. Generate OpenTimestamps proof using the `opentimestamps` library
+3. Encode the proof as base64
+4. Add the `["ots", base64_proof]` tag to the event
+5. Sign and publish the event
 
 **Verification:**
-1. Extract the block height and hash from the `b` tag
-2. Verify the block hash matches the actual Bitcoin block at that height
-3. Compare event `created_at` timestamp with block timestamp
-4. Reject events with `created_at` before the block timestamp
+1. Extract the OTS proof from the `ots` tag
+2. Decode the base64 proof
+3. Verify the proof against the original data using OpenTimestamps
+4. Check if the timestamp has been confirmed in a Bitcoin block
+5. Compare the Bitcoin block timestamp with the event's `created_at` timestamp
 
 ## Discovery and Search
 
@@ -224,11 +235,10 @@ const file = await uploadFile(pdfFile);
 const blobHash = file.sha256;
 const blobUrl = file.url;
 
-// 2. Get current Bitcoin block
-const block = await fetch('https://blockstream.info/api/blocks/tip/height');
-const blockHeight = await block.text();
-const blockData = await fetch(`https://blockstream.info/api/block-height/${blockHeight}`);
-const blockHash = await blockData.text();
+// 2. Create OpenTimestamps proof
+import { createTimestamp } from 'opentimestamps';
+const paperData = `my-paper-2024:My Research Paper:${blobHash}:${Date.now()}`;
+const timestampResult = await createTimestamp(paperData);
 
 // 3. Create paper event
 const paperEvent = {
@@ -239,7 +249,7 @@ const paperEvent = {
     ["title", "My Research Paper"],
     ["summary", "Full abstract here..."],
     ["published_at", Math.floor(Date.now() / 1000).toString()],
-    ["b", blockHeight, blockHash],
+    ["ots", timestampResult.proof],
     ["h", blobHash],
     ["url", blobUrl],
     ["m", "application/pdf"],
@@ -256,13 +266,17 @@ await nostr.event(paperEvent);
 ### Writing a Review
 
 ```javascript
+// Create OpenTimestamps proof for the review
+const reviewData = `32623:author-pubkey:my-paper-2024:accept:9:${Date.now()}`;
+const reviewTimestamp = await createTimestamp(reviewData);
+
 const reviewEvent = {
   kind: 4597,
   content: "## Review\n\nDetailed review content here...",
   tags: [
     ["a", "32623:author-pubkey:my-paper-2024"],
     ["p", "author-pubkey"],
-    ["b", currentBlockHeight, currentBlockHash],
+    ["ots", reviewTimestamp.proof],
     ["verdict", "accept"],
     ["rating", "9"],
     ["aspect", "methodology"],
@@ -301,7 +315,7 @@ const reviews = await nostr.query([{
 
 ### Spam Prevention
 
-- Bitcoin block hash requirement makes backdating impossible
+- OpenTimestamps proofs make backdating impossible (anchored to Bitcoin blocks)
 - Proof-of-work (NIP-13) can be optionally required
 - Relays can implement rate limiting on kind 32623 events
 - Reputation systems discourage low-quality submissions
@@ -311,7 +325,7 @@ const reviews = await nostr.query([{
 - Regular events (kind 4597 reviews) are permanent and cannot be deleted
 - Addressable events (kind 32623 papers) can be updated by the author
 - Blossom blobs are content-addressable and immutable by design
-- Bitcoin block hashes provide tamper-evident timestamps
+- OpenTimestamps proofs provide tamper-evident timestamps anchored to Bitcoin
 
 ### Privacy
 
@@ -337,4 +351,6 @@ Possible future additions to the protocol:
 - [NIP-94: File Metadata](https://github.com/nostr-protocol/nips/blob/master/94.md)
 - [NIP-B7: Blossom](https://github.com/nostr-protocol/nips/blob/master/B7.md)
 - [Blossom BUDs](https://github.com/hzrd149/blossom)
+- [OpenTimestamps](https://opentimestamps.org)
+- [OpenTimestamps Specification](https://github.com/opentimestamps/opentimestamps-server)
 - [Bitcoin Block Explorer APIs](https://blockstream.info/api)

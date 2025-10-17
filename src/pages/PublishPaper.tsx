@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useToast } from '@/hooks/useToast';
+import { useCreateTimestamp } from '@/hooks/useOpenTimestamps';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ export default function PublishPaper() {
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
   const { toast } = useToast();
+  const { createTimestamp, isCreating: isTimestamping } = useCreateTimestamp();
 
   const [formData, setFormData] = useState({
     id: '',
@@ -158,11 +160,10 @@ export default function PublishPaper() {
 
       setUploadProgress(50);
 
-      // Step 2: Get Bitcoin block for anchoring
-      const blockResponse = await fetch('https://blockstream.info/api/blocks/tip/height');
-      const blockHeight = await blockResponse.text();
-      const blockHashResponse = await fetch(`https://blockstream.info/api/block-height/${blockHeight}`);
-      const blockHash = await blockHashResponse.text();
+      // Step 2: Create OpenTimestamps proof
+      // Create a unique identifier for this paper (hash of critical metadata)
+      const paperData = `${formData.id}:${formData.title}:${blobHash}:${Date.now()}`;
+      const timestampResult = await createTimestamp(paperData);
 
       setUploadProgress(75);
 
@@ -172,7 +173,7 @@ export default function PublishPaper() {
         ['title', formData.title],
         ['summary', formData.summary],
         ['published_at', Math.floor(Date.now() / 1000).toString()],
-        ['b', blockHeight, blockHash],
+        ['ots', timestampResult.proof], // OpenTimestamps proof
         ['h', blobHash],
         ['url', blobUrl],
         ['m', 'application/pdf'],
@@ -228,7 +229,7 @@ export default function PublishPaper() {
     }
   };
 
-  const isProcessing = isUploading || isPublishing;
+  const isProcessing = isUploading || isTimestamping || isPublishing;
 
   if (!user) {
     return (
