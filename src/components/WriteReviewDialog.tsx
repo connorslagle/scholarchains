@@ -115,7 +115,7 @@ export function WriteReviewDialog({ paperAddress }: { paperAddress: string }) {
           },
         }
       );
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to fetch Bitcoin block data',

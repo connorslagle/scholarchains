@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { retryOperation } from './useRetry';
 
 export interface PaperEvent extends NostrEvent {
   kind: 32623;
@@ -68,24 +69,20 @@ export function usePapers(options?: {
   return useQuery({
     queryKey: ['papers', options?.topic, options?.author, options?.limit],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
-      const filters: any[] = [{
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+
+      const filters = [{
         kinds: [32623],
         limit: options?.limit || 20,
+        ...(options?.topic && { '#t': [options.topic] }),
+        ...(options?.author && { authors: [options.author] }),
       }];
 
-      // Add topic filter if specified
-      if (options?.topic) {
-        filters[0]['#t'] = [options.topic];
-      }
-
-      // Add author filter if specified
-      if (options?.author) {
-        filters[0].authors = [options.author];
-      }
-
-      const events = await nostr.query(filters, { signal });
+      // Use retry logic for network resilience
+      const events = await retryOperation(
+        () => nostr.query(filters, { signal }),
+        { maxAttempts: 2, initialDelay: 500 }
+      );
       
       // Validate and filter events
       const validPapers = events.filter(validatePaper) as PaperEvent[];

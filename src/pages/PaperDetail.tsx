@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { usePaper, getPaperMetadata } from '@/hooks/usePapers';
 import { usePaperReviews, getReviewStats } from '@/hooks/useReviews';
 import { useAuthor } from '@/hooks/useAuthor';
@@ -174,7 +173,7 @@ export default function PaperDetail() {
                     </Button>
                   )}
 
-                  <ZapButton event={paper} />
+                  <ZapButton target={paper} />
 
                   <WriteReviewDialog paperAddress={`32623:${author}:${id}`} />
                 </div>

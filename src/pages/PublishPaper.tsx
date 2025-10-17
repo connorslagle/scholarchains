@@ -94,6 +94,7 @@ export default function PublishPaper() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Validate file type
       if (selectedFile.type !== 'application/pdf') {
         toast({
           title: 'Invalid File Type',
@@ -102,6 +103,18 @@ export default function PublishPaper() {
         });
         return;
       }
+
+      // Validate file size (50MB max)
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      if (selectedFile.size > maxSize) {
+        toast({
+          title: 'File Too Large',
+          description: 'Maximum file size is 50MB. Please upload a smaller file.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setFile(selectedFile);
     }
   };

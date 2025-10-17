@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { retryOperation } from './useRetry';
 
 export interface ReviewEvent extends NostrEvent {
   kind: 4597;
@@ -52,12 +53,16 @@ export function usePaperReviews(paperAddress: string) {
   return useQuery({
     queryKey: ['reviews', paperAddress],
     queryFn: async (c) => {
-      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(3000)]);
-      
-      const events = await nostr.query([{
-        kinds: [4597],
-        '#a': [paperAddress],
-      }], { signal });
+      const signal = AbortSignal.any([c.signal, AbortSignal.timeout(5000)]);
+
+      // Use retry logic for network resilience
+      const events = await retryOperation(
+        () => nostr.query([{
+          kinds: [4597],
+          '#a': [paperAddress],
+        }], { signal }),
+        { maxAttempts: 2, initialDelay: 500 }
+      );
 
       // Validate and filter events
       const validReviews = events.filter(validateReview) as ReviewEvent[];
