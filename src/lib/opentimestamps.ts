@@ -1,70 +1,10 @@
 /**
- * OpenTimestamps Utility Functions
- * Handles creation and verification of cryptographic timestamps
- *
- * NOTE: The opentimestamps npm package is a CommonJS library that's incompatible with
- * Vite's ESM bundler. For production use, OpenTimestamps operations should be implemented
- * via a backend API endpoint that can use the Node.js library.
- *
- * Current implementation uses mock functions for demonstration purposes.
- * See TODO below for production implementation options.
- *
- * TODO: Implement one of these solutions:
- * 1. Create a backend API endpoint (e.g., POST /api/timestamp) that uses the Node.js
- *    opentimestamps library to create and verify proofs
- * 2. Use a WebAssembly-based OTS implementation if one becomes available
- * 3. Implement OTS protocol directly in TypeScript (complex but possible)
+ * OpenTimestamps Client Library
+ * Handles communication with the ScholarChains backend API for OpenTimestamps operations
  */
 
-// Type definitions for OpenTimestamps
-interface OTSDetachedTimestampFile {
-  serializeToBytes(): Uint8Array;
-}
-
-interface OTSOps {
-  OpSHA256: new () => unknown;
-}
-
-interface OTSDetachedTimestampFileConstructor {
-  fromHash(op: unknown, hash: Uint8Array): OTSDetachedTimestampFile;
-  deserialize(bytes: Uint8Array): OTSDetachedTimestampFile;
-}
-
-// Mock implementations for development
-// In production, these should call a backend API
-const getDetachedTimestampFile = async (): Promise<OTSDetachedTimestampFileConstructor> => {
-  return {
-    fromHash: (_op: unknown, _hash: Uint8Array): OTSDetachedTimestampFile => ({
-      serializeToBytes: () => new Uint8Array(32), // Mock 32-byte proof
-    }),
-    deserialize: (_bytes: Uint8Array): OTSDetachedTimestampFile => ({
-      serializeToBytes: () => new Uint8Array(32),
-    }),
-  };
-};
-
-const getOps = async () => {
-  return {
-    OpSHA256: class {},
-  };
-};
-
-const stamp = async (detached: OTSDetachedTimestampFile, _calendars: string[]) => {
-  // Mock: Return the same detached timestamp
-  console.warn('Using mock OpenTimestamps implementation. Implement backend API for production.');
-  return detached;
-};
-
-const verify = async (_detached: OTSDetachedTimestampFile, _hash: Uint8Array) => {
-  // Mock: Return undefined (pending)
-  console.warn('Using mock OpenTimestamps verification. Implement backend API for production.');
-  return undefined;
-};
-
-const info = async (_detached: OTSDetachedTimestampFile) => {
-  // Mock: Return pending status
-  return 'Pending confirmation (mock implementation)';
-};
+// Get API URL from environment or use default
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Default OpenTimestamps calendar servers
 export const DEFAULT_CALENDARS = [
@@ -106,32 +46,27 @@ export async function createTimestamp(
   calendars: string[] = DEFAULT_CALENDARS
 ): Promise<TimestampResult> {
   try {
-    // Calculate hash
-    const hash = await sha256(data);
+    // Convert Uint8Array to string for API transmission
+    const dataString = typeof data === 'string' ? data : new TextDecoder().decode(data);
 
-    // Get OTS classes
-    const DetachedTimestampFile = await getDetachedTimestampFile();
-    const Ops = await getOps();
+    const response = await fetch(`${API_URL}/api/timestamp/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: dataString,
+        calendars,
+      }),
+    });
 
-    // Create detached timestamp file
-    const detached = DetachedTimestampFile.fromHash(new Ops.OpSHA256(), hash);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create timestamp');
+    }
 
-    // Stamp with calendar servers
-    const stamped = await stamp(detached, calendars);
-
-    // Serialize to bytes
-    const otsBytes = stamped.serializeToBytes();
-
-    // Convert to base64
-    const proof = Buffer.from(otsBytes).toString('base64');
-
-    // Get info about the timestamp
-    const timestampInfo = await getTimestampInfo(stamped);
-
-    return {
-      proof,
-      info: timestampInfo,
-    };
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error('Failed to create timestamp:', error);
     throw new Error(
@@ -151,31 +86,27 @@ export async function verifyTimestamp(
   data: string | Uint8Array
 ): Promise<TimestampInfo> {
   try {
-    // Decode base64 proof
-    const otsBytes = Buffer.from(proofBase64, 'base64');
+    // Convert Uint8Array to string for API transmission
+    const dataString = typeof data === 'string' ? data : new TextDecoder().decode(data);
 
-    // Get OTS classes
-    const DetachedTimestampFile = await getDetachedTimestampFile();
+    const response = await fetch(`${API_URL}/api/timestamp/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        proof: proofBase64,
+        data: dataString,
+      }),
+    });
 
-    // Deserialize timestamp
-    const detached = DetachedTimestampFile.deserialize(otsBytes);
-
-    // Calculate hash of data
-    const hash = await sha256(data);
-
-    // Verify the timestamp
-    const result = await verify(detached, hash);
-
-    if (!result) {
-      return { isPending: true };
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to verify timestamp');
     }
 
-    // Extract timestamp information
-    return {
-      timestamp: result.timestamp,
-      blockHeight: result.height,
-      isPending: false,
-    };
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error('Failed to verify timestamp:', error);
     throw new Error(
@@ -186,31 +117,17 @@ export async function verifyTimestamp(
 
 /**
  * Get information about a timestamp without full verification
- * @param detached - Detached timestamp file or base64 proof
+ * @param proofBase64 - Base64-encoded OTS proof
  * @returns Timestamp information
  */
 export async function getTimestampInfo(
-  detached: OTSDetachedTimestampFile | string
+  proofBase64: string
 ): Promise<TimestampInfo> {
   try {
-    let timestampFile: OTSDetachedTimestampFile;
-
-    if (typeof detached === 'string') {
-      const otsBytes = Buffer.from(detached, 'base64');
-      const DetachedTimestampFile = await getDetachedTimestampFile();
-      timestampFile = DetachedTimestampFile.deserialize(otsBytes);
-    } else {
-      timestampFile = detached;
-    }
-
-    const infoResult = await info(timestampFile);
-
-    // Parse the info result to extract details
-    // The info function returns a human-readable string
-    const isPending = infoResult.includes('pending') || infoResult.includes('Pending');
-
+    // For now, just return pending - verification will provide full info
+    // This is a lightweight check without full blockchain verification
     return {
-      isPending,
+      isPending: true,
     };
   } catch (error) {
     console.error('Failed to get timestamp info:', error);
@@ -275,16 +192,23 @@ export async function calculateEventHash(eventData: {
  */
 export async function upgradeTimestamp(proofBase64: string): Promise<string> {
   try {
-    const otsBytes = Buffer.from(proofBase64, 'base64');
-    const DetachedTimestampFile = await getDetachedTimestampFile();
-    const detached = DetachedTimestampFile.deserialize(otsBytes);
+    const response = await fetch(`${API_URL}/api/timestamp/upgrade`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        proof: proofBase64,
+      }),
+    });
 
-    // Upgrade the timestamp
-    const upgraded = await stamp(detached, DEFAULT_CALENDARS);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to upgrade timestamp');
+    }
 
-    // Serialize and return
-    const upgradedBytes = upgraded.serializeToBytes();
-    return Buffer.from(upgradedBytes).toString('base64');
+    const result = await response.json();
+    return result.proof;
   } catch (error) {
     console.error('Failed to upgrade timestamp:', error);
     // Return original proof if upgrade fails

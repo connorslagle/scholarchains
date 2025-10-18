@@ -54,13 +54,69 @@ services:
       - VITE_HMR_PROTOCOL=ws
       - VITE_HMR_HOST=localhost
       - VITE_HMR_PORT=8080
+      - VITE_API_URL=http://backend:3001
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - scholarchains-network
+    labels:
+      - "com.scholarchains.service=development"
+      - "com.scholarchains.version=dev"
+
+  # ============================================
+  # Backend Service
+  # OpenTimestamps API server
+  # ============================================
+  backend:
+    build:
+      context: ./scholarchains-backend
+      dockerfile: Dockerfile
+    image: scholarchains-backend:latest
+    container_name: scholarchains-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000
+    restart: unless-stopped
+    networks:
+      - scholarchains-network
+    labels:
+      - "com.scholarchains.service=backend"
+      - "com.scholarchains.version=1.0"
+
+  # ============================================
+  # Backend Development Service
+  # Node.js with live reload
+  # ============================================
+  backend-dev:
+    build:
+      context: ./scholarchains-backend
+      dockerfile: Dockerfile
+      target: builder
+    image: scholarchains-backend:dev
+    container_name: scholarchains-backend-dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./scholarchains-backend/src:/app/src:ro
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000
+    command: npm run dev
     stdin_open: true
     tty: true
     restart: unless-stopped
     networks:
       - scholarchains-network
     labels:
-      - "com.scholarchains.service=development"
+      - "com.scholarchains.service=backend-dev"
       - "com.scholarchains.version=dev"
 
 networks:
