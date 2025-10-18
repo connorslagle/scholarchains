@@ -14,8 +14,40 @@ import {
 const router = express.Router();
 
 /**
- * POST /api/timestamp/create
- * Create a new OpenTimestamps proof
+ * @openapi
+ * /api/timestamp/create:
+ *   post:
+ *     tags:
+ *       - Timestamps
+ *     summary: Create a new OpenTimestamps proof
+ *     description: Creates a cryptographic timestamp proof for arbitrary data using OpenTimestamps calendar servers
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateTimestampRequest'
+ *     responses:
+ *       200:
+ *         description: Timestamp proof created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateTimestampResponse'
+ *       400:
+ *         description: Bad request - invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Too many requests - rate limit exceeded
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/create', createRateLimiter, async (req, res) => {
   try {
@@ -57,8 +89,40 @@ router.post('/create', createRateLimiter, async (req, res) => {
 });
 
 /**
- * POST /api/timestamp/verify
- * Verify an OpenTimestamps proof
+ * @openapi
+ * /api/timestamp/verify:
+ *   post:
+ *     tags:
+ *       - Timestamps
+ *     summary: Verify an OpenTimestamps proof
+ *     description: Verifies a timestamp proof against the original data to check Bitcoin confirmation status
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/VerifyTimestampRequest'
+ *     responses:
+ *       200:
+ *         description: Verification result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/TimestampInfo'
+ *       400:
+ *         description: Bad request - invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Too many requests - rate limit exceeded
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/verify', verifyRateLimiter, async (req, res) => {
   try {
@@ -89,8 +153,40 @@ router.post('/verify', verifyRateLimiter, async (req, res) => {
 });
 
 /**
- * POST /api/timestamp/upgrade
- * Upgrade a pending OpenTimestamps proof
+ * @openapi
+ * /api/timestamp/upgrade:
+ *   post:
+ *     tags:
+ *       - Timestamps
+ *     summary: Upgrade a pending OpenTimestamps proof
+ *     description: Checks if a pending timestamp has been confirmed in a Bitcoin block and upgrades the proof if available
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpgradeTimestampRequest'
+ *     responses:
+ *       200:
+ *         description: Upgrade result (may return original proof if still pending)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UpgradeTimestampResponse'
+ *       400:
+ *         description: Bad request - invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Too many requests - rate limit exceeded
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/upgrade', upgradeRateLimiter, async (req, res) => {
   try {
@@ -124,8 +220,20 @@ router.post('/upgrade', upgradeRateLimiter, async (req, res) => {
 });
 
 /**
- * GET /api/timestamp/health
- * Health check endpoint
+ * @openapi
+ * /api/timestamp/health:
+ *   get:
+ *     tags:
+ *       - Health
+ *     summary: Health check endpoint
+ *     description: Returns the service health status and current timestamp
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
  */
 router.get('/health', (_req, res) => {
   res.json({

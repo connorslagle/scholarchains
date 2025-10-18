@@ -7,6 +7,26 @@ ScholarChains is a censorship-resistant research publishing platform that combin
 - **Blossom** for content-addressable file storage
 - **OpenTimestamps** for Bitcoin-based cryptographic timestamping
 
+## 📁 Repository Structure
+
+This repository is organized as a monorepo containing both frontend and backend:
+
+```
+scholarchains/
+├── src/                           # Frontend React application
+├── scholarchains-backend/         # Backend API service
+│   ├── src/
+│   │   ├── routes/               # API endpoints
+│   │   ├── lib/                  # OpenTimestamps wrapper
+│   │   └── middleware/           # CORS, rate limiting
+│   ├── Dockerfile
+│   └── README.md
+├── docker-compose.yml            # Both services orchestration
+├── Dockerfile                    # Frontend container
+├── Dockerfile.dev                # Frontend dev container
+└── README.md                     # This file
+```
+
 ## 🌟 Features
 
 ### Core Functionality
@@ -36,75 +56,110 @@ See `/NIP.md` for the complete protocol specification including:
 - File storage with Blossom
 - Security considerations and verification processes
 
-## ⚠️ OpenTimestamps Implementation Note
+## ✅ OpenTimestamps Implementation
 
-**Current Status**: The OpenTimestamps functionality is currently implemented with mock functions for UI/UX demonstration purposes.
+ScholarChains includes a **production-ready backend service** that provides real OpenTimestamps cryptographic timestamping.
 
-**Why**: The `opentimestamps` npm package is a CommonJS library that's incompatible with Vite's ESM bundler. Multiple workaround attempts (dynamic imports, Vite plugins, etc.) were unsuccessful due to fundamental module system incompatibilities.
+### Architecture
 
-**Production Implementation Required**: To use real OpenTimestamps cryptographic timestamping, you need to implement a backend API endpoint:
+The `opentimestamps` npm package is a CommonJS library incompatible with Vite's ESM bundler, so we've separated concerns:
+
+- **Frontend** (`src/lib/opentimestamps.ts`): Client that calls backend API
+- **Backend** (`scholarchains-backend/`): Node.js Express server with real OTS integration
+
+### Backend API Endpoints
 
 ```typescript
-// Example Node.js backend endpoint
-POST /api/timestamp
-{
-  "data": "string to timestamp",
-  "calendars": ["https://alice.btc.calendar.opentimestamps.org", ...]
-}
+// Create timestamp
+POST /api/timestamp/create
+Body: { "data": "string to timestamp", "calendars": [...] }
+Response: { "proof": "base64-ots-proof", "info": { "isPending": true } }
 
-// Returns
-{
-  "proof": "base64-encoded OTS proof",
-  "info": { "isPending": true }
-}
+// Verify timestamp
+POST /api/timestamp/verify
+Body: { "proof": "base64-ots-proof", "data": "original-string" }
+Response: { "timestamp": 1234567890, "isPending": false }
+
+// Upgrade timestamp
+POST /api/timestamp/upgrade
+Body: { "proof": "base64-ots-proof" }
+Response: { "proof": "upgraded-proof", "upgraded": true }
+
+// Health check
+GET /api/timestamp/health
+Response: { "status": "ok", "timestamp": "2025-10-18..." }
 ```
 
-The backend can use the `opentimestamps` library in Node.js where CommonJS modules work correctly. The frontend would call this API instead of using the library directly.
-
-**Alternative Solutions**:
-1. Create a Node.js backend service (recommended)
-2. Use WebAssembly-based OTS implementation (if available)
-3. Reimplement OTS protocol in TypeScript (complex)
-
-See `src/lib/opentimestamps.ts` for implementation details and TODOs.
+See [`scholarchains-backend/README.md`](scholarchains-backend/README.md) for detailed API documentation.
 
 ## 🚀 Quick Start
 
 ### Option 1: Docker (Recommended)
 
-**Production**:
+**Full Stack (Frontend + Backend)**:
 ```bash
-# Build and run with Docker Compose
-docker-compose up -d app
+# Start both services with hot reload
+docker-compose up app-dev backend
 
-# Access at http://localhost
+# Frontend: http://localhost:8080
+# Backend:  http://localhost:3001
 ```
 
-**Development with HMR**:
+**Production Deployment**:
 ```bash
-# Start development server with hot reload
+# Build and run production containers
+docker-compose up -d app backend
+
+# Frontend: http://localhost (port 80)
+# Backend:  http://localhost:3001
+```
+
+**Individual Services**:
+```bash
+# Frontend only (development)
 docker-compose up app-dev
 
-# Access at http://localhost:8080
+# Backend only (development)
+docker-compose up backend-dev
+
+# Frontend only (production)
+docker-compose up app
+
+# Backend only (production)
+docker-compose up backend
 ```
 
 See [Docker Guide](docs/DOCKER.md) for detailed instructions.
 
 ### Option 2: Local Development
 
-**Development**:
+**Frontend**:
 ```bash
+# Install and run
 npm install
 npm run dev
+
+# Access at http://localhost:8080
 ```
 
-**Build for Production**:
+**Backend**:
 ```bash
-npm run build
+cd scholarchains-backend
+
+# Install and run
+npm install
+npm run dev
+
+# API available at http://localhost:3001
 ```
 
 **Run Tests**:
 ```bash
+# Frontend tests
+npm test
+
+# Backend tests
+cd scholarchains-backend
 npm test
 ```
 
@@ -160,14 +215,28 @@ npm test
 
 ## 🔧 Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite
+### Frontend
+- **Framework**: React 18, TypeScript, Vite
 - **Styling**: TailwindCSS 3, shadcn/ui components
 - **Nostr**: @nostrify/nostrify, @nostrify/react
 - **State**: TanStack Query (React Query)
 - **Routing**: React Router v6
 - **Lightning**: NIP-57 Zaps via Nostr Wallet Connect
 - **File Storage**: Blossom (NIP-B7)
-- **Timestamps**: Bitcoin block hashes (via public APIs)
+- **Timestamps**: OpenTimestamps (via backend API)
+
+### Backend
+- **Runtime**: Node.js 20
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **OpenTimestamps**: opentimestamps npm package
+- **Security**: CORS, Rate Limiting (express-rate-limit)
+- **Deployment**: Docker multi-stage builds
+
+### Infrastructure
+- **Containerization**: Docker, Docker Compose
+- **Web Server**: Nginx (production frontend)
+- **Networking**: Shared Docker network for service communication
 
 ## 🎨 Design Features
 
@@ -217,44 +286,73 @@ npm test
 
 ## 🐳 Docker Deployment
 
-ScholarChains includes production-ready Docker support with multi-stage builds.
+ScholarChains is a containerized monorepo with production-ready Docker support.
+
+### Services
+
+The `docker-compose.yml` orchestrates multiple services:
+
+| Service | Purpose | Port | Image Size |
+|---------|---------|------|------------|
+| `app` | Production frontend (Nginx) | 80 | ~25MB |
+| `app-dev` | Development frontend (Vite HMR) | 8080 | ~500MB |
+| `backend` | Production backend API | 3001 | ~100MB |
+| `backend-dev` | Development backend (tsx watch) | 3001 | ~200MB |
 
 ### Quick Start
 
 ```bash
-# Production (optimized, ~25MB image)
-docker-compose up -d app
+# Full development stack
+docker-compose up app-dev backend
 
-# Development (with hot reload)
-docker-compose up app-dev
+# Full production stack
+docker-compose up -d app backend
+
+# Individual services
+docker-compose up app-dev          # Frontend only
+docker-compose up backend          # Backend only
 ```
 
 ### Features
 
-- ✅ **Multi-stage builds** - Small production images (~25MB)
-- ✅ **Nginx optimized** - Fast static file serving
-- ✅ **Development mode** - Hot Module Replacement (HMR)
+- ✅ **Multi-stage builds** - Optimized production images
+- ✅ **Nginx optimized** - Fast static file serving (frontend)
+- ✅ **Development mode** - Hot Module Replacement for both services
 - ✅ **Health checks** - Automatic container restart
-- ✅ **Security hardened** - Non-root user, minimal base image
+- ✅ **Security hardened** - Non-root users, minimal base images
+- ✅ **Network isolation** - Services communicate via Docker network
+- ✅ **Volume mounts** - Live code reload in development
+
+### Environment Variables
+
+**Frontend** (`app-dev`):
+- `VITE_API_URL`: Backend API URL (default: `http://backend:3001`)
+- `VITE_HMR_HOST`: Hot reload host (default: `localhost`)
+
+**Backend** (`backend`):
+- `PORT`: API port (default: `3001`)
+- `NODE_ENV`: Environment (default: `development`)
+- `ALLOWED_ORIGINS`: CORS origins (comma-separated)
 
 ### Documentation
 
 See [Docker Guide](docs/DOCKER.md) for:
 - Detailed setup instructions
-- Environment variables
+- Environment configuration
 - Cloud deployment guides
 - Troubleshooting tips
 - Performance optimization
 
 ### Cloud Platforms
 
-Compatible with:
+Both services are cloud-ready and compatible with:
 - AWS ECS/Fargate
 - Google Cloud Run
 - Azure Container Instances
-- DigitalOcean
+- DigitalOcean App Platform
 - Fly.io
 - Railway
+- Render
 
 ## 🚧 Future Enhancements
 

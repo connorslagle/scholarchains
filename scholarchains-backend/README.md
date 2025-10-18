@@ -13,6 +13,17 @@ This backend service provides real OpenTimestamps integration using the `opentim
 - **Upgrade Timestamps**: Check if pending timestamps have been confirmed on Bitcoin blockchain
 - **Rate Limiting**: Prevent abuse with configurable rate limits
 - **CORS Support**: Configured for ScholarChains frontend integration
+- **OpenAPI Documentation**: Interactive API docs via Swagger UI
+
+## API Documentation
+
+### Interactive Documentation
+
+Visit **http://localhost:3001/api-docs** when running the server to access the interactive Swagger UI documentation.
+
+### OpenAPI Specification
+
+Download the OpenAPI 3.0 JSON spec at **http://localhost:3001/api-docs.json**
 
 ## API Endpoints
 
