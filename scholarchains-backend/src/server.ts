@@ -7,8 +7,21 @@ import { swaggerSpec } from './swagger.js';
 
 dotenv.config();
 
-const app = express();
+// Validate environment configuration
 const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Log configuration (helps with debugging)
+console.log(`Environment: ${NODE_ENV}`);
+console.log(`Port: ${PORT}`);
+
+if (process.env.ALLOWED_ORIGINS) {
+  console.log(`CORS Origins: ${process.env.ALLOWED_ORIGINS}`);
+} else {
+  console.warn('ALLOWED_ORIGINS not set - using defaults');
+}
+
+const app = express();
 
 // Middleware
 app.use(express.json());
@@ -82,6 +95,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`ScholarChains Backend running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ ScholarChains Backend running on port ${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`🔗 API Root: http://localhost:${PORT}/`);
 });

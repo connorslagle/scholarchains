@@ -6,6 +6,13 @@
 // Get API URL from environment or use default
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// Validate API URL configuration
+if (!API_URL || !API_URL.startsWith('http')) {
+  console.warn(
+    'VITE_API_URL is not properly configured. Using default: http://localhost:3001'
+  );
+}
+
 // Default OpenTimestamps calendar servers
 export const DEFAULT_CALENDARS = [
   'https://alice.btc.calendar.opentimestamps.org',
