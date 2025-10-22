@@ -38,7 +38,7 @@ export interface TimestampResult {
 export async function sha256(data: string | Uint8Array): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const dataBytes = typeof data === 'string' ? encoder.encode(data) : data;
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBytes);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBytes as BufferSource);
   return new Uint8Array(hashBuffer);
 }
 
@@ -162,7 +162,7 @@ export function deserializeOtsFromBase64(base64: string): Uint8Array {
 export function downloadOtsProof(proofBase64: string, filename: string = 'timestamp.ots'): void {
   try {
     const otsBytes = deserializeOtsFromBase64(proofBase64);
-    const blob = new Blob([otsBytes], { type: 'application/octet-stream' });
+    const blob = new Blob([otsBytes as BlobPart], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
