@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { BlossomUploader } from '@nostrify/nostrify/uploaders';
 
 import { useCurrentUser } from "./useCurrentUser";
+import { useAppContext } from "./useAppContext";
 
 // Default Blossom servers for redundancy
 const DEFAULT_BLOSSOM_SERVERS = [
@@ -10,14 +11,15 @@ const DEFAULT_BLOSSOM_SERVERS = [
 ];
 
 /**
- * Get configured Blossom servers from environment or defaults
+ * Get configured Blossom servers from context, environment, or defaults
  */
-function getBlossomServers(): string[] {
-  const envServers = import.meta.env.VITE_BLOSSOM_SERVERS;
+function getBlossomServers(configServers?: string): string[] {
+  // Priority: 1. User config from AppContext, 2. Environment variable, 3. Defaults
+  const serverSource = configServers || import.meta.env.VITE_BLOSSOM_SERVERS;
 
-  if (envServers) {
-    // Parse comma-separated list from environment
-    return envServers
+  if (serverSource) {
+    // Parse comma-separated list
+    return serverSource
       .split(',')
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0)
@@ -29,6 +31,7 @@ function getBlossomServers(): string[] {
 
 export function useUploadFile() {
   const { user } = useCurrentUser();
+  const { config } = useAppContext();
 
   return useMutation({
     mutationFn: async (file: File) => {
@@ -36,7 +39,7 @@ export function useUploadFile() {
         throw new Error('Must be logged in to upload files');
       }
 
-      const servers = getBlossomServers();
+      const servers = getBlossomServers(config.blossomServers);
 
       // Try each server in sequence until one succeeds
       let lastError: Error | null = null;
@@ -71,7 +74,8 @@ export function useUploadFile() {
 
 /**
  * Get the list of configured Blossom servers (exported for UI display)
+ * @param configServers - Optional servers from user config
  */
-export function getConfiguredBlossomServers(): string[] {
-  return getBlossomServers();
+export function getConfiguredBlossomServers(configServers?: string): string[] {
+  return getBlossomServers(configServers);
 }
