@@ -124,11 +124,11 @@ export async function verifyTimestamp(
 
 /**
  * Get information about a timestamp without full verification
- * @param proofBase64 - Base64-encoded OTS proof
+ * @param _proofBase64 - Base64-encoded OTS proof (currently unused, always returns pending)
  * @returns Timestamp information
  */
 export async function getTimestampInfo(
-  proofBase64: string
+  _proofBase64: string
 ): Promise<TimestampInfo> {
   try {
     // For now, just return pending - verification will provide full info

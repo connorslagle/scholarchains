@@ -129,10 +129,10 @@ export async function verifyTimestamp(
  * @returns Timestamp information
  */
 export async function getTimestampInfo(
-  detached: any | string
+  detached: openTimestamps.DetachedTimestampFile | string
 ): Promise<TimestampInfo> {
   try {
-    let timestampFile: any;
+    let timestampFile: openTimestamps.DetachedTimestampFile;
 
     if (typeof detached === 'string') {
       const otsBytes = Buffer.from(detached, 'base64');
