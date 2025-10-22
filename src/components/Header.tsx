@@ -5,6 +5,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { RelaySelector } from '@/components/RelaySelector';
+import { BlossomSelector } from '@/components/BlossomSelector';
 import {
   Sheet,
   SheetContent,
@@ -52,6 +53,7 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <RelaySelector className="w-auto" />
+            <BlossomSelector className="w-auto" />
             <ThemeToggle />
             <LoginArea className="max-w-xs" />
           </div>
@@ -95,6 +97,13 @@ export function Header() {
                       Relay Settings
                     </p>
                     <RelaySelector className="w-full" />
+                  </div>
+
+                  <div className="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                      Blossom Storage
+                    </p>
+                    <BlossomSelector className="w-full" />
                   </div>
 
                   <div className="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
