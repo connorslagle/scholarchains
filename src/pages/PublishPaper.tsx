@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useUploadFile } from '@/hooks/useUploadFile';
+import { useUploadFile, getConfiguredBlossomServers } from '@/hooks/useUploadFile';
 import { useToast } from '@/hooks/useToast';
 import { useCreateTimestamp } from '@/hooks/useOpenTimestamps';
+import { useAppContext } from '@/hooks/useAppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, FileText, X, Plus, ArrowLeft } from 'lucide-react';
+import { Upload, FileText, X, Plus, ArrowLeft, Cloud, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const SUBJECT_CATEGORIES = [
   'cs.AI - Artificial Intelligence',
@@ -50,11 +52,15 @@ const LICENSES = [
 
 export default function PublishPaper() {
   const { user } = useCurrentUser();
+  const { config } = useAppContext();
   const navigate = useNavigate();
   const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
   const { mutate: createEvent, isPending: isPublishing } = useNostrPublish();
   const { toast } = useToast();
   const { createTimestamp, isCreating: isTimestamping } = useCreateTimestamp();
+
+  // Get configured Blossom servers for display
+  const blossomServers = getConfiguredBlossomServers(config.blossomServers);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -275,6 +281,27 @@ export default function PublishPaper() {
           </CardHeader>
 
           <CardContent>
+            {/* Blossom Server Info */}
+            <Alert className="mb-6 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30">
+              <Cloud className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-slate-700 dark:text-slate-300">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="font-medium">File Storage: </span>
+                    Your PDF will be uploaded to {blossomServers.length} Blossom {blossomServers.length === 1 ? 'server' : 'servers'} with automatic fallback.
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {blossomServers.map((server, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs bg-white dark:bg-slate-900">
+                          {server.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Paper ID */}
               <div className="space-y-2">

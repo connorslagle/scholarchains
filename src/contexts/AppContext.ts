@@ -7,6 +7,8 @@ export interface AppConfig {
   theme: Theme;
   /** Selected relay URL */
   relayUrl: string;
+  /** Selected Blossom servers (comma-separated or array) */
+  blossomServers?: string;
 }
 
 export interface AppContextType {
@@ -16,6 +18,8 @@ export interface AppContextType {
   updateConfig: (updater: (currentConfig: Partial<AppConfig>) => Partial<AppConfig>) => void;
   /** Optional list of preset relays to display in the RelaySelector */
   presetRelays?: { name: string; url: string }[];
+  /** Optional list of preset Blossom servers to display in the BlossomSelector */
+  presetBlossomServers?: { name: string; url: string }[];
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);

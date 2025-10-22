@@ -33,6 +33,7 @@ const queryClient = new QueryClient({
 const defaultConfig: AppConfig = {
   theme: "light",
   relayUrl: "wss://relay.ditto.pub",
+  blossomServers: "https://blossom.primal.net,https://blossom.satellite.earth",
 };
 
 const presetRelays = [
@@ -42,10 +43,16 @@ const presetRelays = [
   { url: 'wss://relay.primal.net', name: 'Primal' },
 ];
 
+const presetBlossomServers = [
+  { url: 'https://blossom.primal.net', name: 'Primal' },
+  { url: 'https://blossom.satellite.earth', name: 'Satellite' },
+  { url: 'https://cdn.satellite.earth', name: 'Satellite CDN' },
+];
+
 export function App() {
   return (
     <UnheadProvider head={head}>
-      <AppProvider storageKey="nostr:app-config" defaultConfig={defaultConfig} presetRelays={presetRelays}>
+      <AppProvider storageKey="nostr:app-config" defaultConfig={defaultConfig} presetRelays={presetRelays} presetBlossomServers={presetBlossomServers}>
         <QueryClientProvider client={queryClient}>
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>

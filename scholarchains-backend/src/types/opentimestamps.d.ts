@@ -5,7 +5,7 @@
 
 declare module 'opentimestamps' {
   export class DetachedTimestampFile {
-    static fromHash(op: any, hash: Buffer): DetachedTimestampFile;
+    static fromHash(op: Ops.OpSHA256, hash: Buffer): DetachedTimestampFile;
     static deserialize(bytes: Buffer): DetachedTimestampFile;
     serializeToBytes(): Buffer;
   }

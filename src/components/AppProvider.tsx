@@ -11,12 +11,15 @@ interface AppProviderProps {
   defaultConfig: AppConfig;
   /** Optional list of preset relays to display in the RelaySelector */
   presetRelays?: { name: string; url: string }[];
+  /** Optional list of preset Blossom servers to display in the BlossomSelector */
+  presetBlossomServers?: { name: string; url: string }[];
 }
 
 // Zod schema for AppConfig validation
 const AppConfigSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']),
   relayUrl: z.string().url(),
+  blossomServers: z.string().optional(),
 }) satisfies z.ZodType<AppConfig>;
 
 export function AppProvider(props: AppProviderProps) {
@@ -25,6 +28,7 @@ export function AppProvider(props: AppProviderProps) {
     storageKey,
     defaultConfig,
     presetRelays,
+    presetBlossomServers,
   } = props;
 
   // App configuration state with localStorage persistence
@@ -51,6 +55,7 @@ export function AppProvider(props: AppProviderProps) {
     config,
     updateConfig,
     presetRelays,
+    presetBlossomServers,
   };
 
   // Apply theme effects to document
