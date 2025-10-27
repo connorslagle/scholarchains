@@ -5,7 +5,8 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { genUserName } from '@/lib/genUserName';
 import type { ReviewEvent } from '@/hooks/useReviews';
 import { getReviewMetadata } from '@/hooks/useReviews';
-import { Star, CheckCircle, XCircle, AlertCircle, MessageCircle } from 'lucide-react';
+import { parseEnhancedReview } from '@/types/enhanced-review';
+import { Star, CheckCircle, XCircle, AlertCircle, MessageCircle, Clock, Shield, Code, Database } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 
@@ -13,17 +14,31 @@ export function ReviewCard({ review }: { review: ReviewEvent }) {
   const metadata = getReviewMetadata(review);
   const reviewer = useAuthor(review.pubkey);
   const reviewerMetadata = reviewer.data?.metadata;
-  
+
   const displayName = reviewerMetadata?.name || genUserName(review.pubkey);
   const reviewerAvatar = reviewerMetadata?.picture;
 
   const reviewDate = new Date(review.created_at * 1000);
 
-  const verdictConfig = {
+  // Try to parse as enhanced review
+  const enhancedReview = parseEnhancedReview(review.tags, review.content);
+  const isEnhanced = enhancedReview.technical && enhancedReview.reproducibility;
+
+  const verdictConfig: Record<string, { icon: JSX.Element; label: string; color: string }> = {
     accept: {
       icon: <CheckCircle className="h-4 w-4" />,
       label: 'Accept',
       color: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700',
+    },
+    'accept-with-revisions': {
+      icon: <CheckCircle className="h-4 w-4" />,
+      label: 'Accept with Revisions',
+      color: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700',
+    },
+    'major-revisions': {
+      icon: <AlertCircle className="h-4 w-4" />,
+      label: 'Major Revisions',
+      color: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700',
     },
     reject: {
       icon: <XCircle className="h-4 w-4" />,
@@ -84,6 +99,62 @@ export function ReviewCard({ review }: { review: ReviewEvent }) {
             </Badge>
           </div>
         </div>
+
+        {/* Enhanced Review Metadata */}
+        {isEnhanced && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+            {enhancedReview.technical && (
+              <>
+                <div className="space-y-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-500 flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Methodology
+                  </div>
+                  <div className="text-sm font-semibold">{enhancedReview.technical.methodology.rating}/10</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-500">Results</div>
+                  <div className="text-sm font-semibold">{enhancedReview.technical.resultsValidity.rating}/10</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-500">Statistics</div>
+                  <div className="text-sm font-semibold">{enhancedReview.technical.statisticalRigor.rating}/10</div>
+                </div>
+              </>
+            )}
+            {enhancedReview.confidence && (
+              <div className="space-y-1">
+                <div className="text-xs text-slate-500 dark:text-slate-500">Confidence</div>
+                <div className="text-sm font-semibold">{enhancedReview.confidence}/5</div>
+              </div>
+            )}
+            {enhancedReview.reproducibility && (
+              <>
+                {enhancedReview.reproducibility.dataAvailable && (
+                  <Badge variant="outline" className="text-xs">
+                    <Database className="h-3 w-3 mr-1" />
+                    Data Available
+                  </Badge>
+                )}
+                {enhancedReview.reproducibility.codeAvailable && (
+                  <Badge variant="outline" className="text-xs">
+                    <Code className="h-3 w-3 mr-1" />
+                    Code Available
+                  </Badge>
+                )}
+              </>
+            )}
+            {enhancedReview.timeSpent && enhancedReview.timeSpent > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs text-slate-500 dark:text-slate-500 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Time Spent
+                </div>
+                <div className="text-sm font-semibold">{enhancedReview.timeSpent}h</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Aspects */}
         {metadata.aspects.length > 0 && (
