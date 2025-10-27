@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { ReviewCard } from '@/components/ReviewCard';
 import { WriteReviewDialog } from '@/components/WriteReviewDialog';
+import { EnhancedReviewDialog } from '@/components/EnhancedReviewDialog';
 import { TimestampVerification } from '@/components/TimestampVerification';
 import {
   ArrowLeft,
@@ -177,6 +178,8 @@ export default function PaperDetail() {
                   <ZapButton target={paper} />
 
                   <WriteReviewDialog paperAddress={`32623:${author}:${id}`} />
+
+                  <EnhancedReviewDialog paperAddress={`32623:${author}:${id}`} />
                 </div>
               </CardContent>
             </Card>
@@ -207,7 +210,10 @@ export default function PaperDetail() {
                     <p className="text-slate-600 dark:text-slate-400 mb-4">
                       No reviews yet. Be the first to review this paper!
                     </p>
-                    <WriteReviewDialog paperAddress={`32623:${author}:${id}`} />
+                    <div className="flex gap-3 justify-center flex-wrap">
+                      <WriteReviewDialog paperAddress={`32623:${author}:${id}`} />
+                      <EnhancedReviewDialog paperAddress={`32623:${author}:${id}`} />
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
